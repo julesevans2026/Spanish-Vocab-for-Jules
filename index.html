@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spanish Vocab Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --card: #1e1e1e;
+    --border: #2a2a2a;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --red: #e05252;
+    --green: #5cb85c;
+    --text: #f0ead8;
+    --muted: #888;
+    --accent: #c9a84c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-image: radial-gradient(ellipse at 20% 20%, rgba(201,168,76,0.05) 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, rgba(201,168,76,0.03) 0%, transparent 50%);
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: -1px;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 30px;
+  }
+
+  /* STATS BAR */
+  .stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 28px;
+    font-size: 0.85rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stat-val { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--gold); font-weight: 700; }
+  .stat-label { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* MODE SELECTOR */
+  .mode-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 50px;
+    padding: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .mode-btn {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 8px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+  .mode-btn.active {
+    background: var(--gold);
+    color: #0d0d0d;
+    font-weight: 700;
+  }
+  .mode-btn:hover:not(.active) { color: var(--text); }
+
+  /* DIRECTION TOGGLE */
+  .dir-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    font-size: 0.8rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .toggle-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    padding: 6px 14px;
+    border-radius: 50px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .toggle-btn:hover { border-color: var(--gold); }
+
+  /* CARD AREA */
+  .game-area {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* FLASHCARD */
+  .flashcard-wrap {
+    perspective: 1200px;
+    width: 100%;
+    cursor: pointer;
+  }
+  .flashcard {
+    width: 100%;
+    height: 220px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+    border-radius: 20px;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(201,168,76,0.1);
+  }
+  .card-back { transform: rotateY(180deg); background: #1a1610; border-color: var(--gold); }
+  .card-lang {
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+    opacity: 0.8;
+  }
+  .card-word {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    font-weight: 700;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .card-hint { font-size: 0.8rem; color: var(--muted); margin-top: 16px; }
+
+  /* MULTIPLE CHOICE */
+  .mc-question {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 700;
+    width: 100%;
+    padding: 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .mc-qlabel { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .mc-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+  .mc-opt {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 16px 14px;
+    border-radius: 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    text-align: center;
+    transition: all 0.18s;
+    line-height: 1.3;
+  }
+  .mc-opt:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); transform: translateY(-1px); }
+  .mc-opt.correct { background: rgba(92,184,92,0.15); border-color: var(--green); color: var(--green); }
+  .mc-opt.wrong { background: rgba(224,82,82,0.12); border-color: var(--red); color: var(--red); }
+  .mc-opt:disabled { cursor: default; }
+
+  /* TYPE IT */
+  .type-question {
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.4rem, 3.5vw, 2rem);
+    font-weight: 700;
+    width: 100%;
+    padding: 30px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    min-height: 110px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .type-qlabel { font-size: 0.65rem; letter-spacing: 3px; text-transform: uppercase; color: var(--gold); font-family: 'DM Sans', sans-serif; font-weight: 400; }
+  .type-input-wrap { display: flex; gap: 10px; width: 100%; }
+  .type-input {
+    flex: 1;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    padding: 16px 20px;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .type-input:focus { border-color: var(--gold); }
+  .type-input.correct { border-color: var(--green); background: rgba(92,184,92,0.07); }
+  .type-input.wrong { border-color: var(--red); background: rgba(224,82,82,0.07); }
+  .submit-btn {
+    background: var(--gold);
+    color: #0d0d0d;
+    border: none;
+    padding: 16px 24px;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .submit-btn:hover { background: var(--gold-light); }
+
+  /* FEEDBACK */
+  .feedback {
+    font-size: 1.1rem;
+    font-weight: 500;
+    text-align: center;
+    min-height: 28px;
+    transition: all 0.3s;
+  }
+  .feedback.correct { color: var(--green); }
+  .feedback.wrong { color: var(--red); }
+  .feedback .correct-ans { color: var(--gold); font-family: 'Playfair Display', serif; }
+
+  /* NEXT BTN */
+  .next-btn {
+    background: transparent;
+    border: 1.5px solid var(--gold);
+    color: var(--gold);
+    padding: 14px 40px;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+  .next-btn:hover { background: var(--gold); color: #0d0d0d; }
+
+  /* PROGRESS BAR */
+  .progress-wrap {
+    width: 100%;
+    max-width: 600px;
+    height: 3px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light));
+    transition: width 0.4s ease;
+    border-radius: 99px;
+  }
+
+  /* STREAK BADGE */
+  .streak {
+    font-size: 0.75rem;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    min-height: 18px;
+  }
+
+  /* RESULT SCREEN */
+  .result-screen {
+    text-align: center;
+    padding: 40px 30px;
+    background: var(--card);
+    border: 1px solid var(--gold);
+    border-radius: 24px;
+    width: 100%;
+    max-width: 600px;
+  }
+  .result-screen h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .result-score { font-size: 4rem; font-family: 'Playfair Display', serif; font-weight: 900; margin: 20px 0; }
+  .result-screen p { color: var(--muted); font-size: 0.95rem; margin-bottom: 24px; }
+  .restart-btn {
+    background: var(--gold);
+    color: #0d0d0d;
+    border: none;
+    padding: 16px 40px;
+    border-radius: 50px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .restart-btn:hover { background: var(--gold-light); }
+
+  /* HIDDEN */
+  .hidden { display: none !important; }
+
+  /* CARD FLIP HINT */
+  .flip-hint {
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* SPECIAL CHARS */
+  .special-chars {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 8px;
+  }
+  .char-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--gold);
+    padding: 4px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.15s;
+  }
+  .char-btn:hover { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+  .pop { animation: pop 0.3s ease; }
+
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+  .shake { animation: shake 0.35s ease; }
+</style>
+</head>
+<body>
+
+<h1>¡Aprende!</h1>
+<p class="subtitle">Spanish Vocabulary Trainer</p>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat"><span class="stat-val" id="stat-score">0</span><span class="stat-label">Score</span></div>
+  <div class="stat"><span class="stat-val" id="stat-correct">0</span><span class="stat-label">Correct</span></div>
+  <div class="stat"><span class="stat-val" id="stat-wrong">0</span><span class="stat-label">Wrong</span></div>
+  <div class="stat"><span class="stat-val" id="stat-streak">0</span><span class="stat-label">Streak 🔥</span></div>
+  <div class="stat"><span class="stat-val" id="stat-remaining">—</span><span class="stat-label">Left</span></div>
+</div>
+
+<!-- PROGRESS -->
+<div class="progress-wrap"><div class="progress-bar" id="progress-bar" style="width:0%"></div></div>
+
+<!-- MODE TABS -->
+<div class="mode-tabs">
+  <button class="mode-btn active" onclick="setMode('random')">🎲 Random Mix</button>
+  <button class="mode-btn" onclick="setMode('flashcard')">🃏 Flashcards</button>
+  <button class="mode-btn" onclick="setMode('multiple')">✅ Multiple Choice</button>
+  <button class="mode-btn" onclick="setMode('type')">⌨️ Type It</button>
+</div>
+
+<!-- DIRECTION TOGGLE -->
+<div class="dir-toggle">
+  <span id="dir-label">ES → EN</span>
+  <button class="toggle-btn" onclick="toggleDir()">⇄ Flip direction</button>
+</div>
+
+<!-- GAME AREA -->
+<div class="game-area" id="game-area">
+
+  <!-- FLASHCARD MODE -->
+  <div id="flashcard-area" class="hidden">
+    <div class="flashcard-wrap" onclick="flipCard()">
+      <div class="flashcard" id="flashcard">
+        <div class="card-face card-front">
+          <div class="card-lang" id="fc-front-lang">SPANISH</div>
+          <div class="card-word" id="fc-front-word">—</div>
+          <div class="card-hint">tap to reveal</div>
+        </div>
+        <div class="card-face card-back">
+          <div class="card-lang" id="fc-back-lang">ENGLISH</div>
+          <div class="card-word" id="fc-back-word">—</div>
+        </div>
+      </div>
+    </div>
+    <p class="flip-hint" id="flip-hint">Tap the card to flip it</p>
+    <div style="display:flex; gap:12px; margin-top:8px;">
+      <button class="next-btn" style="border-color:#e05252;color:#e05252" onclick="flashcardResult(false)">✗ Didn't know</button>
+      <button class="next-btn" style="border-color:#5cb85c;color:#5cb85c" onclick="flashcardResult(true)">✓ Got it!</button>
+    </div>
+  </div>
+
+  <!-- MULTIPLE CHOICE MODE -->
+  <div id="mc-area" class="hidden">
+    <div class="mc-question">
+      <span class="mc-qlabel" id="mc-qlabel">What does this mean?</span>
+      <span id="mc-word">—</span>
+    </div>
+    <div class="mc-options" id="mc-options"></div>
+  </div>
+
+  <!-- TYPE IT MODE -->
+  <div id="type-area" class="hidden">
+    <div class="type-question">
+      <span class="type-qlabel" id="type-qlabel">Translate this word</span>
+      <span id="type-word">—</span>
+    </div>
+    <div class="special-chars">
+      <button class="char-btn" onclick="insertChar('á')">á</button>
+      <button class="char-btn" onclick="insertChar('é')">é</button>
+      <button class="char-btn" onclick="insertChar('í')">í</button>
+      <button class="char-btn" onclick="insertChar('ó')">ó</button>
+      <button class="char-btn" onclick="insertChar('ú')">ú</button>
+      <button class="char-btn" onclick="insertChar('ñ')">ñ</button>
+      <button class="char-btn" onclick="insertChar('ü')">ü</button>
+      <button class="char-btn" onclick="insertChar('¿')">¿</button>
+    </div>
+    <div class="type-input-wrap">
+      <input class="type-input" id="type-input" placeholder="Type your answer…" onkeydown="handleTypeKey(event)" autocomplete="off" autocorrect="off" spellcheck="false"/>
+      <button class="submit-btn" onclick="submitType()">Check</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK -->
+  <div class="feedback" id="feedback"></div>
+
+  <!-- NEXT BUTTON -->
+  <button class="next-btn hidden" id="next-btn" onclick="nextQuestion()">Next →</button>
+
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="result-screen hidden" id="result-screen">
+  <h2>¡Bien hecho!</h2>
+  <div class="result-score" id="result-score">0</div>
+  <p id="result-msg">Round complete!</p>
+  <button class="restart-btn" onclick="restartGame()">Play Again 🔄</button>
+</div>
+
+<script>
+const RAW_VOCAB = [
+  ["Pudor","modesty"],["Una mugra","a mess"],["Trama","plot"],["Inquilino","tenant"],["Canela","cinnamon"],
+  ["Esclarecedor","enlightening"],["Abrumador","overwhelming"],["Aterrador","terrifying"],["Reclutando","recruiting"],
+  ["Apuñalado","stabbed"],["Carne de cañón","cannon fodder"],["Encomendado","entrusted"],["Presos","prisoners"],
+  ["Halagador","flattering"],["Aranceles","tariffs"],["Bofetada","slap"],["Incautando","seizing"],
+  ["Fascinante","fascinating"],["Enviar","to send"],["Bloquear","to block"],["Chimenea","chimney/fireplace"],
+  ["Locura","madness"],["Según él","according to him"],["Arbitraria","arbitrary"],["Raíces","roots"],
+  ["Hace poco","not long ago"],["Hacha","axe"],["Agradable","pleasant"],["Que alegría","what joy"],
+  ["Tímido","shy"],["Alborotar las avispas","to stir up trouble"],["Escupir","to spit"],["Salpicar","to splash"],
+  ["Amargada","bitter"],["Despechada","scorned"],["Engañar","to cheat/trick"],["Estafar","to swindle"],
+  ["Fracasado","failure"],["No aprobé","I did not pass"],["Al final del día","at the end of the day"],
+  ["Valla/Cerca","fence"],["Descoser","to unstitch"],["Agujero","hole"],["Recién nacido","newborn"],
+  ["Amarrarse","to tie"],["Promover","to promote"],["Contaminación","pollution"],["Moscas","flies"],
+  ["Pandemia","pandemic"],["Fingir","to pretend"],["Trastornado","deranged"],["Fijarse","to notice"],
+  ["Colchones","mattresses"],["Cordones","shoelaces"],["Atarse los cordones","to tie your shoelaces"],
+  ["Ganga","bargain"],["Seda","silk"],["Algodón","cotton"],["La etiqueta","the tag/label"],
+  ["Al revés","inside out/backwards"],["Manga","sleeve"],["Lana","wool"],["Las pantuflas","slippers"],
+  ["De segunda mano","second hand"],["Tejer","to knit"],["Lunares","spots/polka dots"],["Saco","jacket"],
+  ["Codo","elbow"],["Averiguar","to find out"],["Aguantar","to endure"],["La tempestad","storm"],
+  ["Hacer pedazos","to break into pieces"],["El hazmerreír","laughing stock"],["Suspiro","sigh"],
+  ["Susurrar","to whisper"],["Estoy harta de","I'm sick of"],["El pulgar","thumb"],["La fusta","whip"],
+  ["Para colmo","to make matters worse"],["Un encanto","a lovely person"],["De golpe","at once/suddenly"],
+  ["Ponerse nervioso","to get nervous"],["El defecto","flaw"],["Acciones","shares"],["Pomo","door knob"],
+  ["Arcoíris","rainbow"],["Pavo","turkey"],["Negocios","business"],["Asunto","affair/matter"],
+  ["Sobre","envelope"],["Reunión","meeting"],["Advertir","to warn"],["Chismes","rumours/gossip"],
+  ["Irrespetuoso","disrespectful"],["Asco","disgust"],["Qué asco","how disgusting"],["Difamación","defamation"],
+  ["Interrumpir","to interrupt"],["Cazar","to hunt"],["Echar un vistazo","to have a look"],
+  ["Avergonzada","ashamed"],["Entregarse","to surrender oneself"],["Rodear","to surround"],
+  ["Arrojado","daring"],["Hablar sin rodeos","to speak frankly"],["Echar","to throw"],["Estafado","cheated"],
+  ["Secuestro","kidnap"],["Rogar","to beg"],["Rezar","to pray"],["Colador","sieve"],
+  ["Decepcionado","disappointed"],["Yema","yolk"],["Antojo","whim/craving"],["Arrodillarse","to kneel"],
+  ["Brindar","to toast"],["Atrevido","daring/cheeky"],["El tacón de vértigo","high heel"],
+  ["El capricho","whim"],["Follamigo","friends with benefits"],["Un lío de una noche","one night stand"],
+  ["Guiñar","to wink"],["Cachondo","horny"],["Despelote","what a mess!"],["Descarada","shameless"],
+  ["Ligar","to pull/flirt"],["Coquetear","to flirt"],["Ponerse en ridículo","to make a fool of oneself"],
+  ["Largarse","to shove off/get lost"],["Huérfano","orphan"],["Adivinar","to guess"],
+  ["A pesar de que","despite"],["Involucrarse","to get involved"],["De hecho","in fact"],
+  ["Sin embargo","however"],["Traducir","to translate"],["Obedecer","to obey"],["Martillo","hammer"],
+  ["Invitados","guests"],["La derrota","defeat"],["Rompecabezas","puzzle"],["A lo largo","along/throughout"],
+  ["Diaria","daily"],["Delito","crime"],["En oferta","on offer/on sale"],["Listillo","smarty pants"],
+  ["Halagado","flattered"],["Ponerse celoso","to get jealous"],["Ponerse triste","to get sad"],
+  ["Cuanto antes","as soon as possible"],["Cara a cara","face to face"],["Marea baja","low tide"],
+  ["Malecón","sea wall/promenade"],["Puede que","it could be that"],["Confundido","confused"],
+  ["Encantadora","charming"],["Comprometido","engaged"],["Risas","laughs"],["Apoyar","to support"],
+  ["Morder","to bite"],["Cobrar","to collect/earn"],["Empeorar","to get worse"],["Un trato","a deal"],
+  ["Urgentemente","urgently"],["Al carajo","forget it/damn it"],["No te arrepentirás","you won't regret it"],
+  ["Botar","to throw/throw away"],["Entrega","delivery"],["Una rueda de prensa","a press conference"],
+  ["Encargar","to order/give responsibility"],["Cobarde","coward"],["Un daño","harm/damage"],
+  ["Herida","wound"],["El cuervo","the crow"],["Zorro","fox"],["Espantoso","hideous/awful"],
+  ["De pronto","suddenly"],["Arreglar","to arrange/fix"],["Arrepentir","to repent"],["Rehén","hostage"],
+  ["Entregar","to deliver/hand over"],["Te extraño","I miss you"],["Pandilla","gang"],
+  ["Una pesadilla","nightmare"],["Cisne","swan"],["Mal humorado","bad mood/grumpy"],["Cadera","hip"],
+  ["Estornudar","to sneeze"],["Pulmón","lung"],["Pecho","chest"],["Mal visto","frowned upon"],
+  ["Despedir","to fire/say goodbye"],["Gastar","to spend"],["Un aumento","a raise"],["Un esfuerzo","an effort"],
+  ["Payaso","clown"],["Hamaca","hammock"],["Acostarse","to lie down"],["Mecer","to swing/rock"],
+  ["Mecedora","rocking chair"],["Techo","roof"],["Hojas","leaves"],["Tronco","trunk"],["Rama","branch"],
+  ["Cáscara","bark/peel"],["Almohada","pillow"],["Paño","towel/cloth"],["Hogar","home"],
+  ["Sordo","deaf"],["Sabio","wise"],["Sencillo","simple/easy"],["Sensible","sensitive"],
+  ["Soler","to usually do"],["Parabrisas","windshield"],["Un cruce peatonal","crosswalk"],
+  ["Por si acaso","just in case"],["Vendajes","bandages"],["Ventaja","advantage"]
+];
+
+let vocab = [];
+let queue = [];
+let currentIdx = 0;
+let currentItem = null;
+let mode = 'random';
+let dirEStoEN = true;
+let score = 0;
+let correctCount = 0;
+let wrongCount = 0;
+let streak = 0;
+let maxStreak = 0;
+let cardFlipped = false;
+let answered = false;
+const ROUND_SIZE = 20;
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function init() {
+  vocab = RAW_VOCAB.map(([es, en]) => ({ es, en }));
+  startRound();
+}
+
+function startRound() {
+  queue = shuffle(vocab).slice(0, ROUND_SIZE);
+  currentIdx = 0;
+  score = 0; correctCount = 0; wrongCount = 0; streak = 0;
+  updateStats();
+  document.getElementById('result-screen').classList.add('hidden');
+  document.getElementById('game-area').style.display = '';
+  loadQuestion();
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+  // reset current question with new mode
+  answered = false;
+  cardFlipped = false;
+  loadQuestion();
+}
+
+function toggleDir() {
+  dirEStoEN = !dirEStoEN;
+  document.getElementById('dir-label').textContent = dirEStoEN ? 'ES → EN' : 'EN → ES';
+  answered = false;
+  cardFlipped = false;
+  loadQuestion();
+}
+
+function getQuestion(item) {
+  return dirEStoEN ? item.es : item.en;
+}
+function getAnswer(item) {
+  return dirEStoEN ? item.en : item.es;
+}
+
+function loadQuestion() {
+  if (currentIdx >= queue.length) { showResult(); return; }
+  currentItem = queue[currentIdx];
+  answered = false;
+  cardFlipped = false;
+
+  hideAll();
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('next-btn').classList.add('hidden');
+
+  // Progress
+  const pct = (currentIdx / queue.length) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('stat-remaining').textContent = queue.length - currentIdx;
+
+  const chosenMode = mode === 'random'
+    ? ['flashcard','multiple','type'][Math.floor(Math.random() * 3)]
+    : mode;
+
+  if (chosenMode === 'flashcard') showFlashcard();
+  else if (chosenMode === 'multiple') showMultipleChoice();
+  else showTypeIt();
+}
+
+function hideAll() {
+  ['flashcard-area','mc-area','type-area'].forEach(id => {
+    document.getElementById(id).classList.add('hidden');
+  });
+}
+
+// ---- FLASHCARD ----
+function showFlashcard() {
+  const fc = document.getElementById('flashcard-area');
+  fc.classList.remove('hidden');
+  const card = document.getElementById('flashcard');
+  card.classList.remove('flipped');
+  document.getElementById('fc-front-lang').textContent = dirEStoEN ? 'SPANISH' : 'ENGLISH';
+  document.getElementById('fc-back-lang').textContent = dirEStoEN ? 'ENGLISH' : 'SPANISH';
+  document.getElementById('fc-front-word').textContent = getQuestion(currentItem);
+  document.getElementById('fc-back-word').textContent = getAnswer(currentItem);
+}
+
+function flipCard() {
+  const card = document.getElementById('flashcard');
+  card.classList.toggle('flipped');
+  cardFlipped = !cardFlipped;
+}
+
+function flashcardResult(knew) {
+  if (!cardFlipped) {
+    // Force flip first
+    flipCard();
+    setTimeout(() => {}, 100);
+  }
+  if (knew) {
+    score += 10; correctCount++;
+    streak++;
+    setFeedback(true, null);
+  } else {
+    wrongCount++;
+    streak = 0;
+    setFeedback(false, getAnswer(currentItem));
+  }
+  updateStats();
+  currentIdx++;
+  setTimeout(loadQuestion, 800);
+}
+
+// ---- MULTIPLE CHOICE ----
+function showMultipleChoice() {
+  document.getElementById('mc-area').classList.remove('hidden');
+  document.getElementById('mc-qlabel').textContent = dirEStoEN ? 'What does this Spanish word mean?' : 'How do you say this in Spanish?';
+  document.getElementById('mc-word').textContent = getQuestion(currentItem);
+
+  // Build options: 1 correct + 3 random wrong
+  const correct = getAnswer(currentItem);
+  const others = shuffle(vocab.filter(v => getAnswer(v) !== correct)).slice(0, 3).map(v => getAnswer(v));
+  const options = shuffle([correct, ...others]);
+
+  const container = document.getElementById('mc-options');
+  container.innerHTML = '';
+  options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'mc-opt';
+    btn.textContent = opt;
+    btn.onclick = () => selectMC(btn, opt, correct);
+    container.appendChild(btn);
+  });
+}
+
+function selectMC(btn, chosen, correct) {
+  if (answered) return;
+  answered = true;
+  const allBtns = document.querySelectorAll('.mc-opt');
+  allBtns.forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct) b.classList.add('correct');
+  });
+  if (chosen === correct) {
+    btn.classList.add('correct');
+    score += 10; correctCount++; streak++;
+    setFeedback(true, null);
+  } else {
+    btn.classList.add('wrong');
+    wrongCount++; streak = 0;
+    setFeedback(false, correct);
+  }
+  updateStats();
+  document.getElementById('next-btn').classList.remove('hidden');
+}
+
+// ---- TYPE IT ----
+function showTypeIt() {
+  document.getElementById('type-area').classList.remove('hidden');
+  document.getElementById('type-qlabel').textContent = dirEStoEN ? 'Translate from Spanish to English' : 'Translate from English to Spanish';
+  document.getElementById('type-word').textContent = getQuestion(currentItem);
+  const input = document.getElementById('type-input');
+  input.value = '';
+  input.className = 'type-input';
+  input.disabled = false;
+  setTimeout(() => input.focus(), 50);
+}
+
+function insertChar(ch) {
+  const input = document.getElementById('type-input');
+  const pos = input.selectionStart;
+  const val = input.value;
+  input.value = val.slice(0, pos) + ch + val.slice(pos);
+  input.selectionStart = input.selectionEnd = pos + 1;
+  input.focus();
+}
+
+function handleTypeKey(e) {
+  if (e.key === 'Enter') {
+    if (answered) nextQuestion();
+    else submitType();
+  }
+}
+
+function normalize(str) {
+  return str.toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e')
+    .replace(/[íìï]/g,'i').replace(/[óòö]/g,'o')
+    .replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9\s]/g,'').replace(/\s+/g,' ').trim();
+}
+
+function submitType() {
+  if (answered) return;
+  const input = document.getElementById('type-input');
+  const val = input.value.trim();
+  if (!val) return;
+  answered = true;
+  input.disabled = true;
+
+  const correct = getAnswer(currentItem);
+  const isCorrect = normalize(val) === normalize(correct);
+
+  // Also allow partial match for phrases
+  const altCorrect = normalize(correct).includes(normalize(val)) && normalize(val).length > 3;
+
+  if (isCorrect || altCorrect) {
+    input.classList.add('correct');
+    score += 10; correctCount++; streak++;
+    setFeedback(true, null);
+  } else {
+    input.classList.add('wrong');
+    wrongCount++; streak = 0;
+    setFeedback(false, correct);
+  }
+  updateStats();
+  document.getElementById('next-btn').classList.remove('hidden');
+}
+
+function setFeedback(correct, correctAnswer) {
+  const fb = document.getElementById('feedback');
+  if (correct) {
+    const msgs = ['¡Perfecto! 🎉', '¡Muy bien! ✨', '¡Correcto! 🌟', '¡Excelente! 🔥', '¡Brillante! 💫'];
+    fb.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+    fb.className = 'feedback correct pop';
+  } else {
+    fb.innerHTML = `Not quite! The answer is: <span class="correct-ans">${correctAnswer}</span>`;
+    fb.className = 'feedback wrong shake';
+  }
+}
+
+function nextQuestion() {
+  currentIdx++;
+  loadQuestion();
+}
+
+function updateStats() {
+  document.getElementById('stat-score').textContent = score;
+  document.getElementById('stat-correct').textContent = correctCount;
+  document.getElementById('stat-wrong').textContent = wrongCount;
+  document.getElementById('stat-streak').textContent = streak;
+}
+
+function showResult() {
+  document.getElementById('game-area').style.display = 'none';
+  const screen = document.getElementById('result-screen');
+  screen.classList.remove('hidden');
+  const total = correctCount + wrongCount;
+  const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
+  document.getElementById('result-score').textContent = score + ' pts';
+  let msg = '';
+  if (pct >= 90) msg = `¡Increíble! ${pct}% correct — you're practically fluent! 🏆`;
+  else if (pct >= 70) msg = `¡Muy bien! ${pct}% correct — keep it up! 💪`;
+  else if (pct >= 50) msg = `Bien hecho! ${pct}% correct — practise makes perfect! 📚`;
+  else msg = `${pct}% correct — don't give up, you've got this! 🌱`;
+  document.getElementById('result-msg').textContent = msg;
+  document.getElementById('progress-bar').style.width = '100%';
+}
+
+function restartGame() {
+  startRound();
+}
+
+init();
+</script>
+</body>
+</html>
